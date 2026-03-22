@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Love Game 💖</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+<style>
+body{
+  margin:0;
+  font-family:'Press Start 2P';
+  text-align:center;
+  overflow:hidden;
+}
+
+.screen{
+  display:none;
+  height:100vh;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+}
+.active{display:flex;}
+
+.big{font-size:28px;}
+.medium{font-size:18px;}
+
+button{
+  font-family:'Press Start 2P';
+  padding:15px;
+  margin:10px;
+  border:none;
+  border-radius:15px;
+  cursor:pointer;
+  font-size:14px;
+}
+
+.pink{background:#ffc0cb;}
+.purple{background:#d8b4f8;}
+.green{background:#b9fbc0;}
+.red{background:#ffadad;}
+
+.circle{
+  width:90px;
+  height:90px;
+  border-radius:50%;
+  background:white;
+  cursor:pointer;
+}
+
+img{width:140px;}
+
+/* popup */
+.popup{
+  position:absolute;
+  top:20px;
+  background:black;
+  color:white;
+  padding:10px;
+  border-radius:10px;
+  animation:fade 2s forwards;
+}
+@keyframes fade{
+  0%{opacity:1;}
+  100%{opacity:0;}
+}
+
+/* heart meter */
+.heart{
+  width:120px;
+  height:120px;
+  background:#fff;
+  position:relative;
+  transform:rotate(-45deg);
+  cursor:pointer;
+}
+.heart:before,
+.heart:after{
+  content:"";
+  width:120px;
+  height:120px;
+  background:#fff;
+  border-radius:50%;
+  position:absolute;
+}
+.heart:before{top:-60px;}
+.heart:after{left:60px;}
+
+.fill{
+  position:absolute;
+  bottom:0;
+  width:100%;
+  background:red;
+}
+
+/* falling hearts */
+@keyframes fall{
+  from{transform:translateY(-100px);}
+  to{transform:translateY(100vh);}
+}
+</style>
+</head>
+
+<body>
+
+<div class="screen active pink" id="start">
+<div class="big">CLICK HERE</div>
+<div class="circle" onclick="explode()"></div>
+</div>
+
+<div class="screen purple" id="ready">
+<div class="big">ARE YOU READY?</div>
+<button onclick="startGame()">YES</button>
+<button onclick="popup('NO IS NOT AN OPTION 😼')">NO</button>
+</div>
+
+<div class="screen pink" id="quiz"></div>
+<div class="screen" id="result"></div>
+
+<div class="screen pink" id="love">
+<div class="big">HOW MUCH DO YOU LOVE ME?</div>
+<div id="count">0</div>
+<div class="heart" onclick="fillLove()">
+<div class="fill" id="fill"></div>
+</div>
+</div>
+
+<script>
+
+/* pixel sound */
+let ctx=new (window.AudioContext||window.webkitAudioContext)();
+function beep(){
+ let o=ctx.createOscillator();
+ let g=ctx.createGain();
+ o.connect(g); g.connect(ctx.destination);
+ o.frequency.value=400;
+ o.start();
+ g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.2);
+}
+
+/* screens */
+function show(id){
+ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+}
+
+function explode(){
+ beep();
+ show('ready');
+}
+
+function popup(text){
+ let p=document.createElement('div');
+ p.className="popup";
+ p.innerText=text;
+ document.body.appendChild(p);
+ setTimeout(()=>p.remove(),2000);
+}
+
+/* questions */
+let q=[
+{q:"WHEN DID WE MEET?",a:["1/3/2026","6/3/2026","2/3/2026"],c:2},
+{q:"WHICH SONG REMINDS ME OF YOU?",a:["SMILE AGAIN","DIE WITH A SMILE","HAPPY DAY"],c:1},
+{q:"MY FAVORITE SONG?",a:["BABY","BLUE","SHAPE OF YOU"],c:1},
+{q:"HOW MANY WIVES DO I HAVE?",a:["6","10","10+ MORE"],c:2},
+{q:"WHO DO YOU LOVE MORE?",a:["GAMES","ME"],c:1,special:"loveMe"},
+{q:"WHAT IS THE MOST IMPORTANT THING?",a:["CATS","FAMILY","OUR RELATIONSHIP"],c:2,special:"mwah"},
+{q:"DO YOU LOVE ME?",a:["NO","YES"],special:"final"}
+];
+
+let i=0;
+
+function startGame(){
+ show('quiz');
+ load();
+}
+
+function load(){
+ let d=document.getElementById('quiz');
+ let data=q[i];
+ d.innerHTML="<div class='big'>"+data.q+"</div>";
+
+ data.a.forEach((t,index)=>{
+  let b=document.createElement('button');
+  b.innerText=t;
+  b.onclick=()=>{
+    beep();
+
+    if(data.special=="final"){
+      if(index==1){
+        show('love');
+      }else{
+        showAngry();
+      }
+      return;
+    }
+
+    if(data.special=="loveMe"){
+      if(index==1){
+        popup("GOOD JOB BABY, I LOVE YOU (˶˃⤙˂˶)");
+        next();
+      }else showWrong();
+      return;
+    }
+
+    if(data.special=="mwah"){
+      if(index==2){
+        popup("MWAHH 😽");
+        next();
+      }else showWrong();
+      return;
+    }
+
+    if(index==data.c){
+      showCorrect();
+    }else showWrong();
+  }
+  d.appendChild(b);
+ });
+}
+
+function showCorrect(){
+ let r=document.getElementById('result');
+ show('result');
+ r.className="screen green active";
+ r.innerHTML="<img src='https://media.tenor.com/2roX3uxz_68AAAAC/cute-cat.gif'><div class='big'>CORRECT!</div><button onclick='next()'>NEXT</button>";
+}
+
+function showWrong(){
+ let r=document.getElementById('result');
+ show('result');
+ r.className="screen red active";
+ r.innerHTML="<img src='https://media.tenor.com/Vg_MxBQH6rUAAAAC/angry-cat-cat.gif'><div class='big'>WRONG!</div><button onclick='retry()'>TRY AGAIN</button>";
+}
+
+function showAngry(){
+ let r=document.getElementById('result');
+ show('result');
+ r.className="screen red active";
+ r.innerHTML="<img src='https://media.tenor.com/Vg_MxBQH6rUAAAAC/angry-cat-cat.gif'><div class='big'>HOW DARE YOU 😾</div>";
+}
+
+function next(){i++;show('quiz');load();}
+function retry(){show('quiz');load();}
+
+/* love meter */
+let love=0;
+function fillLove(){
+ beep();
+ love++;
+ document.getElementById('count').innerText=love;
+
+ let fill=document.getElementById('fill');
+ fill.style.height=(love*5)+"%";
+
+ if(love>=20){
+   explodeHearts();
+   setTimeout(finalScreen,1500);
+ }
+}
+
+function explodeHearts(){
+ for(let i=0;i<40;i++){
+  let h=document.createElement('div');
+  h.innerHTML="💖";
+  h.style.position="absolute";
+  h.style.left=Math.random()*100+"%";
+  h.style.animation="fall 2s linear";
+  document.body.appendChild(h);
+  setTimeout(()=>h.remove(),2000);
+ }
+}
+
+function finalScreen(){
+ let r=document.getElementById('result');
+ show('result');
+ r.className="screen pink active";
+ r.innerHTML="
+ <div class='big'>I KNEW IT 😼</div>
+ <div class='medium'>YOU ARE literally OBSESSED WITH ME 💖</div>
+ <div class='medium'>I LOVE YOU TOO BB</div>
+ <br><br>
+ <div class='big'>FISAL + MARY ♡</div>
+ ";
+}
+
+</script>
+
+</body>
+</html>
